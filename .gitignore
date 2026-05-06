@@ -67,3 +67,18 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# Proje özel
+build/
+cmake-build-*/
+PacmanClone
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Kullanıcının özel fotoğrafı
+assets/images/custom_pacman.png
