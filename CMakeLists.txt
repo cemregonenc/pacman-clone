@@ -26,6 +26,7 @@ set(SOURCES
     src/Game.cpp
     src/Maze.cpp
     src/Player.cpp
+    src/Ghost.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})

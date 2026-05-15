@@ -16,12 +16,27 @@ Game::Game()
     , timeSinceLastUpdate_(sf::Time::Zero)
     , menuAnimTime_(0.f)
     , score_(0)
+    , lives_(3)
 {
     window_.setFramerateLimit(Constants::FPS);
+
     fontLoaded_ = font_.loadFromFile("assets/fonts/Jersey10.ttf");
     if (!fontLoaded_) {
         std::cerr << "[Uyari] Font bulunamadi.\n";
     }
+    // Hayaletler: 2 farkli kisilik (BFS chaser + tahmin eden)
+    const float ts = static_cast<float>(Constants::TILE_SIZE);
+    ghosts_.emplace_back(
+        Ghost::Personality::Chaser,
+        Constants::Colors::GHOST_RED,
+        sf::Vector2f(13.f * ts + ts / 2.f, 14.f * ts + ts / 2.f)
+    );
+    ghosts_.emplace_back(
+        Ghost::Personality::Predict,
+        Constants::Colors::GHOST_PINK,
+        sf::Vector2f(14.f * ts + ts / 2.f, 14.f * ts + ts / 2.f)
+    );
+
 }
 
 
@@ -89,6 +104,10 @@ void Game::update(sf::Time deltaTime) {
         int col = static_cast<int>(pos.x / Constants::TILE_SIZE);
         int row = static_cast<int>(pos.y / Constants::TILE_SIZE);
         score_ += maze_.eatPelletAt(col, row);
+        for (auto& g : ghosts_) {
+            g.update(deltaTime, maze_, player_.position(),
+                     static_cast<Ghost::Direction>(0));  // placeholder
+        }
     }
 }
 
@@ -170,12 +189,16 @@ void Game::renderMenu() {
 void Game::renderPlaying() {
     maze_.draw(window_);
     player_.draw(window_);
+    // Hayaletler oyuncunun ustunde cizilsin
+    for (const auto& g : ghosts_) {
+        g.draw(window_);
+    }
 
-    // Alt UI paneli: skor
     if (!fontLoaded_) return;
 
     float panelY = Constants::MAZE_ROWS * Constants::TILE_SIZE + 10.f;
 
+    // SKOR (sol taraf)
     sf::Text scoreLabel("SKOR", font_, 18);
     scoreLabel.setFillColor(Constants::Colors::UI_HIGHLIGHT);
     scoreLabel.setPosition(20.f, panelY);
@@ -185,6 +208,23 @@ void Game::renderPlaying() {
     scoreValue.setFillColor(Constants::Colors::UI_TEXT);
     scoreValue.setPosition(20.f, panelY + 22.f);
     window_.draw(scoreValue);
+
+    // CANLAR (sag taraf) - kalan can sayisi kadar kucuk sari yuvarlak
+    sf::Text livesLabel("CAN", font_, 18);
+    livesLabel.setFillColor(Constants::Colors::UI_HIGHLIGHT);
+    livesLabel.setPosition(Constants::WINDOW_WIDTH - 180.f, panelY);
+    window_.draw(livesLabel);
+
+    float iconRadius = 12.f;
+    for (int i = 0; i < lives_; ++i) {
+        sf::CircleShape pacIcon(iconRadius, 24);
+        pacIcon.setFillColor(Constants::Colors::PACMAN);
+        pacIcon.setPosition(
+            Constants::WINDOW_WIDTH - 180.f + i * (iconRadius * 2.5f),
+            panelY + 28.f
+        );
+        window_.draw(pacIcon);
+    }
 }
 
 // Pause ekrani: alttaki oyunu ciz, ustune yari saydam overlay koy

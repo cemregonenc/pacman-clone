@@ -3,7 +3,8 @@
 #include "Constants.h"
 #include "Maze.h"
 #include "Player.h"
-
+#include "Ghost.h"
+#include <vector>
 
 // Oyunun ana sinifi: pencereyi tutar, oyun dongusunu yonetir,
 // durum makinesini (Menu / Playing / Paused / GameOver) isler.
@@ -38,8 +39,10 @@ private:
     static const sf::Time TIME_PER_FRAME;
 
     // Menu animasyon zamani
-    float                 menuAnimTime_;
+    float                menuAnimTime_;
     Maze                 maze_;
-    Player                player_;
+    Player               player_;
     int                  score_;
+    int                  lives_;
+    std::vector<Ghost>   ghosts_;
 };
