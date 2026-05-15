@@ -20,6 +20,8 @@ public:
 
 private:
     void drawClassic(sf::RenderWindow& window) const;
+    void drawCustomImage(sf::RenderWindow& window) const;
+ 
 
     // Yardimcilar
     sf::Vector2i currentTile() const;
@@ -35,4 +37,7 @@ private:
     float        animTime_;
     float        radius_;
     float        speed_;
+    sf::Texture  customTexture_;
+    sf::Sprite   customSprite_;
+    bool         useCustomImage_;
 };

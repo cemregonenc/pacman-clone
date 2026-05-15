@@ -79,6 +79,3 @@ PacmanClone
 
 # macOS
 .DS_Store
-
-# Kullanıcının özel fotoğrafı
-assets/images/custom_pacman.png

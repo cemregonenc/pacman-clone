@@ -10,8 +10,26 @@ Player::Player()
     , animTime_(0.f)
     , radius_(Constants::TILE_SIZE * 0.45f)
     , speed_(Constants::TILE_SIZE * 5.f)
+    , useCustomImage_(false)
 {
+    // Ozel fotograf var mi? Varsa yukle ve "kullan" bayragini ac
+    if (customTexture_.loadFromFile("assets/images/custom_pacman.png")) {
+        customTexture_.setSmooth(true);
+        customSprite_.setTexture(customTexture_);
+
+        // Sprite'i Pac-Man cap'ine olcekle
+        sf::Vector2u sz = customTexture_.getSize();
+        float scale = (radius_ * 2.f) / static_cast<float>(sz.x);
+        customSprite_.setScale(scale, scale);
+
+        // Origin merkez: rotate ettiginde dogru donsun
+        customSprite_.setOrigin(sz.x / 2.f, sz.y / 2.f);
+
+        useCustomImage_ = true;
+    }
 }
+    
+
 
 
 // Yon tuslarini oku
@@ -96,7 +114,49 @@ bool Player::canMoveInDirection(Direction d, const Maze& maze) const {
 
 
 void Player::draw(sf::RenderWindow& window) const {
-    drawClassic(window);
+    if (useCustomImage_)
+        drawCustomImage(window);
+    else
+        drawClassic(window);
+}
+
+// Ozel fotograflı Pac-Man:
+//   - sprite yon vektorune gore donduruluyor
+//   - uzerine arka plan renginde ucgen ile "agiz" parcasi kesiliyor
+void Player::drawCustomImage(sf::RenderWindow& window) const {
+    sf::Sprite spr = customSprite_;     // const fonksiyonda kopya alip oynuyoruz
+    spr.setPosition(position_);
+
+    float rotation = 0.f;
+    switch (direction_) {
+        case Direction::Right: rotation = 0.f;   break;
+        case Direction::Down:  rotation = 90.f;  break;
+        case Direction::Left:  rotation = 180.f; break;
+        case Direction::Up:    rotation = 270.f; break;
+        case Direction::None:  rotation = 0.f;   break;
+    }
+    spr.setRotation(rotation);
+    window.draw(spr);
+
+    // Agiz: arka plan renginde ucgen ile bir parca kes
+    float openAmount = (std::sin(animTime_ * 10.f) + 1.f) * 0.5f;
+    float mouthAngle = openAmount * 50.f;
+
+    sf::ConvexShape mouth;
+    mouth.setPointCount(3);
+    mouth.setPoint(0, sf::Vector2f(0.f, 0.f));
+
+    float r = radius_ + 2.f;
+    float rad1 = mouthAngle * 3.14159265f / 180.f;
+    float rad2 = -mouthAngle * 3.14159265f / 180.f;
+
+    mouth.setPoint(1, sf::Vector2f(std::cos(rad1) * r, std::sin(rad1) * r));
+    mouth.setPoint(2, sf::Vector2f(std::cos(rad2) * r, std::sin(rad2) * r));
+
+    mouth.setFillColor(Constants::Colors::BACKGROUND);
+    mouth.setPosition(position_);
+    mouth.setRotation(rotation);   // Agiz da yone gore donsun
+    window.draw(mouth);
 }
 
 
