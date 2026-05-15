@@ -17,6 +17,7 @@ Game::Game()
     , menuAnimTime_(0.f)
     , score_(0)
     , lives_(3)
+    , frightenedTimer_(0.f)
 {
     window_.setFramerateLimit(Constants::FPS);
 
@@ -96,19 +97,41 @@ void Game::update(sf::Time deltaTime) {
     menuAnimTime_ += deltaTime.asSeconds();
 
     if (state_ == Constants::GameState::Playing) {
+        // ===== Frightened sayaci: 0'a inerse hayaletler normale doner =====
+        if (frightenedTimer_ > 0.f) {
+            frightenedTimer_ -= deltaTime.asSeconds();
+            if (frightenedTimer_ <= 0.f) {
+                frightenedTimer_ = 0.f;
+                for (auto& g : ghosts_) {
+                    if (g.mode() == Ghost::Mode::Frightened) {
+                        g.setMode(Ghost::Mode::Chase);
+                    }
+                }
+            }
+        }
+
+        // ===== Klavye + Pac-Man hareketi =====
         player_.handleInput(maze_);
         player_.update(deltaTime, maze_);
 
-        // Pac-Man bulundugu tile'da pellet varsa yer
+        // ===== Pac-Man bulundugu tile'da pellet varsa yer =====
         sf::Vector2f pos = player_.position();
         int col = static_cast<int>(pos.x / Constants::TILE_SIZE);
         int row = static_cast<int>(pos.y / Constants::TILE_SIZE);
-        score_ += maze_.eatPelletAt(col, row);
+        int gained = maze_.eatPelletAt(col, row);
+        score_ += gained;
 
-        score_ += maze_.eatPelletAt(col, row);
+        // Power pellet yendiyse hayaletler korkmus moda gecsin
+        if (gained == 50) {
+            frightenedTimer_ = 8.f;
+            for (auto& g : ghosts_) {
+                if (g.mode() != Ghost::Mode::Eaten) {
+                    g.setMode(Ghost::Mode::Frightened);
+                }
+            }
+        }
 
         // ===== Hayalet carpisma kontrolu =====
-        // Pac-Man bir hayaletin yakininda mi? (Manhattan mesafesi tile bazinda)
         for (auto& g : ghosts_) {
             sf::Vector2f gp = g.position();
             float dx = pos.x - gp.x;
@@ -117,23 +140,27 @@ void Game::update(sf::Time deltaTime) {
             float collisionDist = Constants::TILE_SIZE * 0.7f;
 
             if (distSq < collisionDist * collisionDist) {
-                // Carptik! Can dus, reset
-                --lives_;
-                player_.reset();
-                for (auto& gg : ghosts_) gg.reset();
+                if (g.mode() == Ghost::Mode::Frightened) {
+                    // Pac-Man hayaleti YEDI! +200 puan
+                    score_ += 200;
+                    g.reset();
+                } else {
+                    // Hayalet Pac-Man'i yedi -> can kaybi
+                    --lives_;
+                    player_.reset();
+                    for (auto& gg : ghosts_) gg.reset();
+                    frightenedTimer_ = 0.f;
 
-                if (lives_ <= 0) {
-                    state_ = Constants::GameState::GameOver;
+                    if (lives_ <= 0) {
+                        state_ = Constants::GameState::GameOver;
+                    }
+                    break;
                 }
-                break;
             }
         }
-        // ===== Carpisma sonu =====
 
-        // Hayaletleri guncelle
-
+        // ===== Hayaletleri guncelle (BFS/Greedy) =====
         for (auto& g : ghosts_) {
-            // Player yonu Ghost::Direction'a cevir
             Ghost::Direction pDir = Ghost::Direction::None;
             switch (player_.direction()) {
                 case Player::Direction::Up:    pDir = Ghost::Direction::Up;    break;
@@ -146,7 +173,6 @@ void Game::update(sf::Time deltaTime) {
         }
     }
 }
-
 // Duruma gore ilgili ekrani ciz
 void Game::render() {
     window_.clear(Constants::Colors::BACKGROUND);
