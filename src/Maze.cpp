@@ -86,8 +86,8 @@ bool Maze::isInBounds(int col, int row) const {
 }
 
 
-// Labirenti ciz: duvarlar bitisik mor bloklar olarak gorunur.
-// Grid hissini kirmak icin tile'lar birbirine degecek sekilde cizilir.
+// Labirenti ciz: duvarlar, noktalar, guc meyveleri, hayalet kapisi.
+// pelletPhase parametresi yanip sonme animasyonu icin (Game'den geliyor).
 void Maze::draw(sf::RenderWindow& window) const {
     const float ts = static_cast<float>(Constants::TILE_SIZE);
 
@@ -102,6 +102,22 @@ void Maze::draw(sf::RenderWindow& window) const {
                 body.setPosition(x, y);
                 body.setFillColor(Constants::Colors::WALL);
                 window.draw(body);
+            }
+            else if (t == Tile::Pellet) {
+                // Kucuk yenebilir nokta (tile merkezinde)
+                sf::CircleShape dot(ts * 0.10f, 8);
+                dot.setFillColor(Constants::Colors::PELLET);
+                dot.setOrigin(ts * 0.10f, ts * 0.10f);
+                dot.setPosition(x + ts / 2.f, y + ts / 2.f);
+                window.draw(dot);
+            }
+            else if (t == Tile::PowerPellet) {
+                // Buyuk guc meyvesi (sari)
+                sf::CircleShape big(ts * 0.30f, 16);
+                big.setFillColor(Constants::Colors::POWER_PELLET);
+                big.setOrigin(ts * 0.30f, ts * 0.30f);
+                big.setPosition(x + ts / 2.f, y + ts / 2.f);
+                window.draw(big);
             }
             else if (t == Tile::GhostGate) {
                 sf::RectangleShape gate(sf::Vector2f(ts, 4.f));
