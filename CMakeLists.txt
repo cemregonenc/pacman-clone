@@ -24,6 +24,7 @@ find_package(SFML 2.5 COMPONENTS graphics window system audio REQUIRED)
 set(SOURCES
     src/main.cpp
     src/Game.cpp
+    src/Maze.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
