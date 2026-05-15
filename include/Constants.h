@@ -19,9 +19,9 @@ namespace Constants {
 
     // ---------- Renkler ----------
     namespace Colors {
-        const sf::Color BACKGROUND       (10, 10, 30);      // Koyu lacivert
-        const sf::Color WALL             (33, 33, 222);     // Mavi duvar
-        const sf::Color WALL_GLOW        (80, 80, 255);     // Duvar parlama
+        const sf::Color BACKGROUND       (255, 192, 203);      // Koyu lacivert
+        const sf::Color WALL             (75, 0, 130);     // Mavi duvar
+        const sf::Color WALL_GLOW        (147, 112, 219);     // Duvar parlama
         const sf::Color PELLET           (255, 184, 151);   // Bej noktalar
         const sf::Color POWER_PELLET     (255, 222, 89);    // Sari guc meyvesi
         const sf::Color PACMAN           (255, 235, 59);    // Pac-Man sarisi
