@@ -194,3 +194,12 @@ void Player::drawClassic(sf::RenderWindow& window) const {
     mouth.setPosition(position_);
     window.draw(mouth);
 }
+// Pac-Man'i baslangic konumuna gonder (can kaybinda cagrilir)
+void Player::reset() {
+    position_ = sf::Vector2f(
+        14.f * Constants::TILE_SIZE,
+        23.f * Constants::TILE_SIZE + Constants::TILE_SIZE / 2.f
+    );
+    direction_ = Direction::Right;
+    desiredDirection_ = Direction::Right;
+}

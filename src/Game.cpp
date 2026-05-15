@@ -104,6 +104,34 @@ void Game::update(sf::Time deltaTime) {
         int col = static_cast<int>(pos.x / Constants::TILE_SIZE);
         int row = static_cast<int>(pos.y / Constants::TILE_SIZE);
         score_ += maze_.eatPelletAt(col, row);
+
+        score_ += maze_.eatPelletAt(col, row);
+
+        // ===== Hayalet carpisma kontrolu =====
+        // Pac-Man bir hayaletin yakininda mi? (Manhattan mesafesi tile bazinda)
+        for (auto& g : ghosts_) {
+            sf::Vector2f gp = g.position();
+            float dx = pos.x - gp.x;
+            float dy = pos.y - gp.y;
+            float distSq = dx*dx + dy*dy;
+            float collisionDist = Constants::TILE_SIZE * 0.7f;
+
+            if (distSq < collisionDist * collisionDist) {
+                // Carptik! Can dus, reset
+                --lives_;
+                player_.reset();
+                for (auto& gg : ghosts_) gg.reset();
+
+                if (lives_ <= 0) {
+                    state_ = Constants::GameState::GameOver;
+                }
+                break;
+            }
+        }
+        // ===== Carpisma sonu =====
+
+        // Hayaletleri guncelle
+
         for (auto& g : ghosts_) {
             // Player yonu Ghost::Direction'a cevir
             Ghost::Direction pDir = Ghost::Direction::None;
@@ -254,12 +282,39 @@ void Game::renderPaused() {
 
 
 void Game::renderGameOver() {
+    // Arka planda labirent kalsin (daha sahne hissi)
+    maze_.draw(window_);
+
     if (!fontLoaded_) return;
-    sf::Text txt("GAME OVER", font_, 36);
-    txt.setFillColor(Constants::Colors::GHOST_RED);
-    centerText(txt, Constants::WINDOW_WIDTH / 2.f,
-                    Constants::WINDOW_HEIGHT / 2.f);
-    window_.draw(txt);
+
+    // Yari saydam karartma
+    sf::RectangleShape overlay(sf::Vector2f(Constants::WINDOW_WIDTH,
+                                            Constants::WINDOW_HEIGHT));
+    overlay.setFillColor(sf::Color(0, 0, 0, 200));
+    window_.draw(overlay);
+
+    // GAME OVER baslik
+    sf::Text title("GAME OVER", font_, 56);
+    title.setFillColor(Constants::Colors::GHOST_RED);
+    title.setOutlineColor(sf::Color::White);
+    title.setOutlineThickness(2.f);
+    centerText(title, Constants::WINDOW_WIDTH / 2.f,
+                      Constants::WINDOW_HEIGHT / 2.f - 60.f);
+    window_.draw(title);
+
+    // Skor
+    sf::Text scoreText("SKOR: " + std::to_string(score_), font_, 28);
+    scoreText.setFillColor(Constants::Colors::UI_HIGHLIGHT);
+    centerText(scoreText, Constants::WINDOW_WIDTH / 2.f,
+                          Constants::WINDOW_HEIGHT / 2.f + 10.f);
+    window_.draw(scoreText);
+
+    // Cikis ipucu
+    sf::Text esc("ESC: Cikis", font_, 16);
+    esc.setFillColor(sf::Color(180, 180, 180));
+    centerText(esc, Constants::WINDOW_WIDTH / 2.f,
+                    Constants::WINDOW_HEIGHT / 2.f + 70.f);
+    window_.draw(esc);
 }
 
 

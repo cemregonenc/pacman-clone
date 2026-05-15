@@ -22,6 +22,7 @@ public:
     sf::Vector2f position() const { return position_; }
     void         setMode(Mode m)  { mode_ = m; }
     Mode         mode() const     { return mode_; }
+    void         reset();
 
 private:
     void chooseDirection(const Maze& maze, sf::Vector2f playerPos,
@@ -35,12 +36,20 @@ private:
     Direction    bfsNextStep(const Maze& maze,
                              sf::Vector2i from,
                              sf::Vector2i target) const;
+    // Greedy: en yakindaki hedefe goturen yonu sec (BFS'ten daha basit)
+    Direction    greedyNextStep(const Maze& maze,
+                                sf::Vector2i from,
+                                sf::Vector2i target) const;
     // Uyeler
     Personality  personality_;
     sf::Color    color_;
     sf::Vector2f position_;
     sf::Vector2f startPos_;
     Direction    direction_;
+    Direction    previousDirection_;
+    // Pinky takilma tespiti icin
+    sf::Vector2i lastTile_;
+    int          stuckCounter_;
     float        speed_;
     float        radius_;
     Mode         mode_;

@@ -2,6 +2,7 @@
 #include <cmath>
 #include <queue>
 #include <vector>
+#include <climits>
 
 
 Ghost::Ghost(Personality p, sf::Color color, sf::Vector2f startPos)
@@ -10,6 +11,9 @@ Ghost::Ghost(Personality p, sf::Color color, sf::Vector2f startPos)
     , position_(startPos)
     , startPos_(startPos)
     , direction_(Direction::Right)
+    , previousDirection_(Direction::None)
+    , lastTile_(-1, -1)
+    , stuckCounter_(0)
     , speed_(Constants::TILE_SIZE * 4.f)
     , radius_(Constants::TILE_SIZE * 0.45f)
     , mode_(Mode::Chase)
@@ -31,6 +35,7 @@ void Ghost::update(sf::Time deltaTime, const Maze& maze,
 
 
     if (atTileCenter()) {
+        previousDirection_ = direction_;
         chooseDirection(maze, playerPos, playerDir);
 
         if (!canMoveInDirection(direction_, maze)) {
@@ -182,10 +187,43 @@ void Ghost::chooseDirection(const Maze& maze, sf::Vector2f playerPos,
         target.y = myTile.y - (playerTile.y - myTile.y);
     }
 
-    Direction next = bfsNextStep(maze, currentTile(), target);
+    // Kisilige gore farkli algoritma kullan
+    //   Chaser (Blinky): BFS - en kisa yolu garanti bulur
+    //   Predict (Pinky): Greedy - hizli ama miyop
+    Direction next;
+
+    if (personality_ == Personality::Chaser) {
+        // Blinky her zaman BFS
+        next = bfsNextStep(maze, currentTile(), target);
+    } else {
+        // Pinky: Greedy default, ama takilirsa BFS ile kurtar
+        sf::Vector2i myTile = currentTile();
+
+        if (myTile == lastTile_) {
+            ++stuckCounter_;
+        } else {
+            stuckCounter_ = 0;
+            lastTile_ = myTile;
+        }
+
+        // 3 frame ust uste ayni tile -> takilmis, BFS ile kurtar
+        if (stuckCounter_ > 3) {
+            next = bfsNextStep(maze, myTile, target);
+            stuckCounter_ = 0;
+        } else {
+            next = greedyNextStep(maze, myTile, target);
+
+            // Greedy hicbir yon bulamadiysa BFS denetimi yap
+            if (next == Direction::None) {
+                next = bfsNextStep(maze, myTile, target);
+            }
+        }
+    }
+
     if (next != Direction::None) {
         direction_ = next;
     }
+
 }
 
 
@@ -263,4 +301,82 @@ Ghost::Direction Ghost::bfsNextStep(const Maze& maze,
     if (ddy ==  1) return Direction::Down;
     if (ddy == -1) return Direction::Up;
     return Direction::None;
+}
+
+// ============================================================
+// Greedy (acgozlu) algoritma
+// ============================================================
+// Her tile merkezinde 4 komsuya bakar, Manhattan mesafesi en
+// kucuk olan yonu secer. "Geleceği görmez" — anlik en iyi
+// secimi yapar.
+//
+// BFS ile farki:
+//   BFS:    tum labirenti tarar, garantili en kisa yol
+//   Greedy: sadece 4 komsuya bakar, hizli ama optimal degil
+//   Greedy cikmaz yola girebilir.
+//
+// Iki ek kural:
+//   - Geldigi yone (180 derece) geri donmesin (titreme onleme)
+//   - Hicbir yon yoksa geri donmek serbest (cikmaz yoldan donus)
+// ============================================================
+Ghost::Direction Ghost::greedyNextStep(const Maze& maze,
+                                       sf::Vector2i from,
+                                       sf::Vector2i target) const {
+    const Direction dirs[4] = {
+        Direction::Up, Direction::Down, Direction::Left, Direction::Right
+    };
+    const int dx[4] = {  0,  0, -1,  1 };
+    const int dy[4] = { -1,  1,  0,  0 };
+
+    // Geri donus yonu (mevcut yonun tersi)
+    Direction reverse = Direction::None;
+    switch (previousDirection_) {
+        case Direction::Up:    reverse = Direction::Down;  break;
+        case Direction::Down:  reverse = Direction::Up;    break;
+        case Direction::Left:  reverse = Direction::Right; break;
+        case Direction::Right: reverse = Direction::Left;  break;
+        default: break;
+    }
+
+    Direction best = Direction::None;
+    int bestDist = INT_MAX;
+
+    // 1. Tur: geri donmeden en yakin yonu bul
+    for (int i = 0; i < 4; ++i) {
+        if (dirs[i] == reverse) continue;     // Geri donmek YASAK
+
+        int nx = from.x + dx[i];
+        int ny = from.y + dy[i];
+
+        if (nx < 0) nx = Constants::MAZE_COLS - 1;
+        if (nx >= Constants::MAZE_COLS) nx = 0;
+
+        if (ny < 0 || ny >= Constants::MAZE_ROWS) continue;
+        if (maze.isWall(nx, ny)) continue;
+
+        int dist = std::abs(nx - target.x) + std::abs(ny - target.y);
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = dirs[i];
+        }
+    }
+
+    // 2. Tur: hicbir yon yoksa (cikmaz yol) geri donmeyi kabul et
+    if (best == Direction::None && reverse != Direction::None) {
+        if (canMoveInDirection(reverse, maze)) {
+            return reverse;
+        }
+    }
+
+    return best;
+}
+
+// Hayaleti baslangic konumuna gonder
+void Ghost::reset() {
+    position_ = startPos_;
+    direction_ = Direction::Right;
+    previousDirection_ = Direction::None;
+    mode_ = Mode::Chase;
+    stuckCounter_ = 0;
+    lastTile_ = sf::Vector2i(-1, -1);
 }
