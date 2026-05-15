@@ -17,6 +17,7 @@ public:
     void draw(sf::RenderWindow& window) const;
 
     sf::Vector2f position() const { return position_; }
+    Direction    direction() const { return direction_; }
 
 private:
     void drawClassic(sf::RenderWindow& window) const;

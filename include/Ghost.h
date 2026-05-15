@@ -31,7 +31,10 @@ private:
     bool         atTileCenter() const;
     sf::Vector2f directionVector(Direction d) const;
     bool         canMoveInDirection(Direction d, const Maze& maze) const;
-
+    // BFS ile labirentte en kisa yolu bulup ilk adimi dondurur
+    Direction    bfsNextStep(const Maze& maze,
+                             sf::Vector2i from,
+                             sf::Vector2i target) const;
     // Uyeler
     Personality  personality_;
     sf::Color    color_;

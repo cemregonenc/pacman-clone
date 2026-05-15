@@ -1,5 +1,7 @@
 #include "Ghost.h"
 #include <cmath>
+#include <queue>
+#include <vector>
 
 
 Ghost::Ghost(Personality p, sf::Color color, sf::Vector2f startPos)
@@ -18,11 +20,32 @@ Ghost::Ghost(Personality p, sf::Color color, sf::Vector2f startPos)
 
 // Adim 5.1'de henuz hareket yok, sadece zaman ilerletme.
 // 5.2 ve 5.3'te chooseDirection() icini dolduracagiz.
-void Ghost::update(sf::Time deltaTime, const Maze& /*maze*/,
-                   sf::Vector2f /*playerPos*/, Direction /*playerDir*/) {
+void Ghost::update(sf::Time deltaTime, const Maze& maze,
+                   sf::Vector2f playerPos, Direction playerDir) {
     animTime_ += deltaTime.asSeconds();
-}
 
+    // Tile merkezinde yeni yon karari ver
+    if (atTileCenter()) {
+        chooseDirection(maze, playerPos, playerDir);
+
+        // Onumuzde duvar varsa dur (chooseDirection bulamazsa)
+        if (!canMoveInDirection(direction_, maze)) {
+            sf::Vector2i tile = currentTile();
+            position_.x = tile.x * Constants::TILE_SIZE + Constants::TILE_SIZE / 2.f;
+            position_.y = tile.y * Constants::TILE_SIZE + Constants::TILE_SIZE / 2.f;
+            return;
+        }
+    }
+
+    // Hareket
+    sf::Vector2f delta = directionVector(direction_) * speed_ * deltaTime.asSeconds();
+    position_ += delta;
+
+    // Yan tunel desteği
+    float maxX = Constants::MAZE_COLS * Constants::TILE_SIZE;
+    if (position_.x < -radius_) position_.x = maxX + radius_;
+    if (position_.x > maxX + radius_) position_.x = -radius_;
+}
 
 // Klasik hayalet sekli:
 //   - Govde: yarim daire (ust) + dikdortgen (alt)
@@ -144,4 +167,102 @@ bool Ghost::canMoveInDirection(Direction d, const Maze& maze) const {
 void Ghost::chooseDirection(const Maze& /*maze*/, sf::Vector2f /*playerPos*/,
                             Direction /*playerDir*/) {
     // bos
+}
+// =============================================================
+// BFS (Breadth-First Search)
+// =============================================================
+// "from" tile'indan "target" tile'ina giden en kisa yoldaki
+// ilk hareket yonunu dondurur.
+//
+// Calisma mantigi:
+//   1. Bir kuyruga baslangic tile'i koyariz
+//   2. Sirayla cikartip 4 komsusuna bakariz (yukari/asagi/sol/sag)
+//   3. Duvar olmayan, henuz ziyaret edilmemis komsulari kuyruga ekleriz
+//   4. Hedefe varinca veya tum tile'lar bitince dururuz
+//   5. Hedeften baslangica dogru parent'lari takip edip ilk yonu buluruz
+//
+// Karmasiklik: O(V + E) - V tile sayisi, E komsuluklar
+// =============================================================
+Ghost::Direction Ghost::bfsNextStep(const Maze& maze,
+                                    sf::Vector2i from,
+                                    sf::Vector2i target) const {
+    const int W = Constants::MAZE_COLS;
+    const int H = Constants::MAZE_ROWS;
+
+    // Hedef labirent disindaysa veya duvarsa, gecerli bir noktaya cek
+    target.x = std::max(0, std::min(W - 1, target.x));
+    target.y = std::max(0, std::min(H - 1, target.y));
+
+    // Ziyaret edildi mi tablosu
+    std::vector<std::vector<bool>> visited(H, std::vector<bool>(W, false));
+
+    // Her tile'in geldigi tile'i tut (yolu geri izlemek icin)
+    std::vector<std::vector<sf::Vector2i>> parent(
+        H, std::vector<sf::Vector2i>(W, {-1, -1})
+    );
+
+    // 4 yon: up, down, left, right
+    const int dx[4] = {  0,  0, -1,  1 };
+    const int dy[4] = { -1,  1,  0,  0 };
+    const Direction dirs[4] = {
+        Direction::Up, Direction::Down, Direction::Left, Direction::Right
+    };
+
+    // BFS kuyrugu
+    std::queue<sf::Vector2i> q;
+    q.push(from);
+    visited[from.y][from.x] = true;
+
+    bool found = false;
+    while (!q.empty()) {
+        sf::Vector2i cur = q.front();
+        q.pop();
+
+        if (cur.x == target.x && cur.y == target.y) {
+            found = true;
+            break;
+        }
+
+        // 4 komsuya bak
+        for (int i = 0; i < 4; ++i) {
+            int nx = cur.x + dx[i];
+            int ny = cur.y + dy[i];
+
+            // Yan tunel sarmalama
+            if (nx < 0) nx = W - 1;
+            if (nx >= W) nx = 0;
+
+            if (ny < 0 || ny >= H) continue;
+            if (visited[ny][nx]) continue;
+            if (maze.isWall(nx, ny)) continue;
+
+            visited[ny][nx] = true;
+            parent[ny][nx] = cur;
+            q.push({nx, ny});
+        }
+    }
+
+    if (!found) return Direction::None;
+
+    // Hedeften geriye dogru izleyip "from"un hemen sonraki tile'ini bul
+    sf::Vector2i step = target;
+    while (parent[step.y][step.x] != from) {
+        sf::Vector2i p = parent[step.y][step.x];
+        if (p.x == -1) return Direction::None;     // Yol bulunamadi
+        step = p;
+    }
+
+    // step artik from'un komsusu -- hangi yonde?
+    int dx2 = step.x - from.x;
+    int dy2 = step.y - from.y;
+
+    // Yan tunel telafisi
+    if (dx2 > 1)  dx2 = -1;
+    if (dx2 < -1) dx2 =  1;
+
+    if (dx2 ==  1) return Direction::Right;
+    if (dx2 == -1) return Direction::Left;
+    if (dy2 ==  1) return Direction::Down;
+    if (dy2 == -1) return Direction::Up;
+    return Direction::None;
 }

@@ -105,8 +105,16 @@ void Game::update(sf::Time deltaTime) {
         int row = static_cast<int>(pos.y / Constants::TILE_SIZE);
         score_ += maze_.eatPelletAt(col, row);
         for (auto& g : ghosts_) {
-            g.update(deltaTime, maze_, player_.position(),
-                     static_cast<Ghost::Direction>(0));  // placeholder
+            // Player yonu Ghost::Direction'a cevir
+            Ghost::Direction pDir = Ghost::Direction::None;
+            switch (player_.direction()) {
+                case Player::Direction::Up:    pDir = Ghost::Direction::Up;    break;
+                case Player::Direction::Down:  pDir = Ghost::Direction::Down;  break;
+                case Player::Direction::Left:  pDir = Ghost::Direction::Left;  break;
+                case Player::Direction::Right: pDir = Ghost::Direction::Right; break;
+                default: break;
+            }
+            g.update(deltaTime, maze_, player_.position(), pDir);
         }
     }
 }
