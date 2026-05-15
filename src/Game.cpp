@@ -78,6 +78,10 @@ void Game::processEvents() {
 // kontrolleri yapilacak.
 void Game::update(sf::Time deltaTime) {
     menuAnimTime_ += deltaTime.asSeconds();
+    // Oyun durumlarinda nesne mantigini guncelle
+    if (state_ == Constants::GameState::Playing) {
+        player_.update(deltaTime);
+    }
 }
 
 
@@ -155,16 +159,16 @@ void Game::renderMenu() {
 }
 
 
+// Oyun ekrani: labirent + (ileride) Pac-Man + hayaletler + skor paneli
 void Game::renderPlaying() {
-    if (!fontLoaded_) return;
-    sf::Text msg("Asama 1 tamam: pencere ve oyun dongusu calisiyor.\n"
-                 "Sonraki adim: labirenti cizmek.",
-                 font_, 14);
-    msg.setFillColor(Constants::Colors::UI_TEXT);
-    msg.setPosition(40.f, 40.f);
-    window_.draw(msg);
-}
+    // Labirenti ciz
+    maze_.draw(window_);
 
+    // Pac-Man'i ciz
+    player_.draw(window_);
+
+    // Adim 4'te skor/can paneli gelecek
+}
 
 // Pause ekrani: alttaki oyunu ciz, ustune yari saydam overlay koy
 void Game::renderPaused() {

@@ -1,6 +1,9 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "Constants.h"
+#include "Maze.h"
+#include "Player.h"
+
 
 // Oyunun ana sinifi: pencereyi tutar, oyun dongusunu yonetir,
 // durum makinesini (Menu / Playing / Paused / GameOver) isler.
@@ -36,4 +39,7 @@ private:
 
     // Menu animasyon zamani
     float                 menuAnimTime_;
+    Maze                 maze_;
+    Player                player_;
+
 };
