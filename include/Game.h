@@ -41,5 +41,5 @@ private:
     float                 menuAnimTime_;
     Maze                 maze_;
     Player                player_;
-
+    int                  score_;
 };

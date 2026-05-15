@@ -15,6 +15,7 @@ Game::Game()
     , state_(Constants::GameState::Menu)
     , timeSinceLastUpdate_(sf::Time::Zero)
     , menuAnimTime_(0.f)
+    , score_(0)
 {
     window_.setFramerateLimit(Constants::FPS);
     fontLoaded_ = font_.loadFromFile("assets/fonts/Jersey10.ttf");
@@ -78,14 +79,18 @@ void Game::processEvents() {
 // kontrolleri yapilacak.
 void Game::update(sf::Time deltaTime) {
     menuAnimTime_ += deltaTime.asSeconds();
-    // Oyun durumlarinda nesne mantigini guncelle
+
     if (state_ == Constants::GameState::Playing) {
         player_.handleInput(maze_);
         player_.update(deltaTime, maze_);
 
+        // Pac-Man bulundugu tile'da pellet varsa yer
+        sf::Vector2f pos = player_.position();
+        int col = static_cast<int>(pos.x / Constants::TILE_SIZE);
+        int row = static_cast<int>(pos.y / Constants::TILE_SIZE);
+        score_ += maze_.eatPelletAt(col, row);
     }
 }
-
 
 // Duruma gore ilgili ekrani ciz
 void Game::render() {
@@ -163,13 +168,23 @@ void Game::renderMenu() {
 
 // Oyun ekrani: labirent + (ileride) Pac-Man + hayaletler + skor paneli
 void Game::renderPlaying() {
-    // Labirenti ciz
     maze_.draw(window_);
-
-    // Pac-Man'i ciz
     player_.draw(window_);
 
-    // Adim 4'te skor/can paneli gelecek
+    // Alt UI paneli: skor
+    if (!fontLoaded_) return;
+
+    float panelY = Constants::MAZE_ROWS * Constants::TILE_SIZE + 10.f;
+
+    sf::Text scoreLabel("SKOR", font_, 18);
+    scoreLabel.setFillColor(Constants::Colors::UI_HIGHLIGHT);
+    scoreLabel.setPosition(20.f, panelY);
+    window_.draw(scoreLabel);
+
+    sf::Text scoreValue(std::to_string(score_), font_, 28);
+    scoreValue.setFillColor(Constants::Colors::UI_TEXT);
+    scoreValue.setPosition(20.f, panelY + 22.f);
+    window_.draw(scoreValue);
 }
 
 // Pause ekrani: alttaki oyunu ciz, ustune yari saydam overlay koy

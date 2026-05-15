@@ -41,16 +41,18 @@ const std::vector<std::string> Maze::RAW_MAP = {
 };
 
 
-Maze::Maze() {
-    // Karakter haritasini 2D Tile dizisine cevir.
-    // Boyle bir kez yapip sonra hizli arama yapariz; her frame parse etmeyiz.
+Maze::Maze() : pelletCount_(0) {
     grid_.resize(Constants::MAZE_ROWS,
                  std::vector<Tile>(Constants::MAZE_COLS, Tile::Empty));
 
     for (int row = 0; row < Constants::MAZE_ROWS; ++row) {
         const std::string& line = RAW_MAP[row];
         for (int col = 0; col < Constants::MAZE_COLS; ++col) {
-            grid_[row][col] = charToTile(line[col]);
+            Tile t = charToTile(line[col]);
+            grid_[row][col] = t;
+            if (t == Tile::Pellet || t == Tile::PowerPellet) {
+                ++pelletCount_;
+            }
         }
     }
 }
@@ -127,4 +129,21 @@ void Maze::draw(sf::RenderWindow& window) const {
             }
         }
     }
+}
+// Belirtilen tile'da pellet varsa yer, skor doner. Yoksa 0 doner.
+int Maze::eatPelletAt(int col, int row) {
+    if (!isInBounds(col, row)) return 0;
+
+    Tile t = grid_[row][col];
+    if (t == Tile::Pellet) {
+        grid_[row][col] = Tile::Empty;
+        --pelletCount_;
+        return 10;          // Klasik Pac-Man: pellet = 10 puan
+    }
+    if (t == Tile::PowerPellet) {
+        grid_[row][col] = Tile::Empty;
+        --pelletCount_;
+        return 50;          // Power pellet = 50 puan
+    }
+    return 0;
 }
