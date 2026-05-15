@@ -26,7 +26,7 @@ namespace Constants {
         const sf::Color POWER_PELLET     (255, 222, 89);    // Sari guc meyvesi
         const sf::Color PACMAN           (255, 235, 59);    // Pac-Man sarisi
         const sf::Color GHOST_RED        (255, 0, 0);       // Blinky
-        const sf::Color GHOST_PINK       (255, 184, 222);   // Pinky
+        const sf::Color GHOST_PINK       (255, 107, 222);   // Pinky
         const sf::Color GHOST_CYAN       (0, 255, 255);     // Inky
         const sf::Color GHOST_ORANGE     (255, 165, 0);     // Clyde
         const sf::Color GHOST_FRIGHTENED (33, 33, 222);     // Korkmus mod

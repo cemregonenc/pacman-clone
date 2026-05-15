@@ -29,12 +29,12 @@ Game::Game()
     ghosts_.emplace_back(
         Ghost::Personality::Chaser,
         Constants::Colors::GHOST_RED,
-        sf::Vector2f(13.f * ts + ts / 2.f, 14.f * ts + ts / 2.f)
+        sf::Vector2f(1.f * ts + ts / 2.f, 1.f * ts + ts / 2.f)
     );
     ghosts_.emplace_back(
         Ghost::Personality::Predict,
         Constants::Colors::GHOST_PINK,
-        sf::Vector2f(14.f * ts + ts / 2.f, 14.f * ts + ts / 2.f)
+        sf::Vector2f(26.f * ts + ts / 2.f, 1.f * ts + ts / 2.f)
     );
 
 }
