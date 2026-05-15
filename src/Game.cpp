@@ -17,7 +17,7 @@ Game::Game()
     , menuAnimTime_(0.f)
 {
     window_.setFramerateLimit(Constants::FPS);
-    fontLoaded_ = font_.loadFromFile("assets/fonts/PressStart2P.ttf");
+    fontLoaded_ = font_.loadFromFile("assets/fonts/Jersey10.ttf");
     if (!fontLoaded_) {
         std::cerr << "[Uyari] Font bulunamadi.\n";
     }
@@ -129,26 +129,26 @@ void Game::renderMenu() {
 
     if (!fontLoaded_) return;
 
-    sf::Text title("PAC-MAN", font_, 48);
+    sf::Text title("PAC-MAN", font_, 72);
     title.setFillColor(Constants::Colors::UI_HIGHLIGHT);
     title.setOutlineColor(Constants::Colors::WALL);
     title.setOutlineThickness(3.f);
     centerText(title, cx, 100.f);
     window_.draw(title);
 
-    sf::Text subtitle("KLONU", font_, 22);
+    sf::Text subtitle("KLONU", font_, 36);
     subtitle.setFillColor(Constants::Colors::UI_TEXT);
     centerText(subtitle, cx, 160.f);
     window_.draw(subtitle);
 
     // Yanip sonen "ENTER" prompt'u: alpha degerini sin ile salindiririz
-    sf::Text prompt("ENTER ile Basla", font_, 16);
+    sf::Text prompt("ENTER ile Basla", font_, 28);
     int alpha = static_cast<int>((std::sin(menuAnimTime_ * 4.f) + 1.f) * 127.f);
     prompt.setFillColor(sf::Color(255, 255, 255, static_cast<sf::Uint8>(alpha)));
     centerText(prompt, cx, cy + 130.f);
     window_.draw(prompt);
 
-    sf::Text esc("ESC: Cikis  |  P: Duraklat", font_, 10);
+    sf::Text esc("ESC: Cikis  |  P: Duraklat", font_, 16);
     esc.setFillColor(sf::Color(180, 180, 180));
     centerText(esc, cx, Constants::WINDOW_HEIGHT - 30.f);
     window_.draw(esc);
