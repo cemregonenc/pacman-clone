@@ -24,6 +24,7 @@ private:
     void renderPlaying();
     void renderPaused();
     void renderGameOver();
+    void renderLevelComplete();
 
     // Yardimci
     void centerText(sf::Text& text, float x, float y);
@@ -45,4 +46,8 @@ private:
     int                  score_;
     int                  lives_;
     std::vector<Ghost>   ghosts_;
+    float                 frightenedTimer_;
+    int                   level_;
+    float                 levelCompleteTimer_;
+
 };

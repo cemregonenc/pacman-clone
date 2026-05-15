@@ -147,3 +147,17 @@ int Maze::eatPelletAt(int col, int row) {
     }
     return 0;
 }
+// Labirenti baslangic durumuna dondur: tum pelletler geri gelsin
+void Maze::reset() {
+    pelletCount_ = 0;
+    for (int row = 0; row < Constants::MAZE_ROWS; ++row) {
+        const std::string& line = RAW_MAP[row];
+        for (int col = 0; col < Constants::MAZE_COLS; ++col) {
+            Tile t = charToTile(line[col]);
+            grid_[row][col] = t;
+            if (t == Tile::Pellet || t == Tile::PowerPellet) {
+                ++pelletCount_;
+            }
+        }
+    }
+}

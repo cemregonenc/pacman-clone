@@ -18,6 +18,8 @@ Game::Game()
     , score_(0)
     , lives_(3)
     , frightenedTimer_(0.f)
+    , level_(1)
+    , levelCompleteTimer_(0.f)
 {
     window_.setFramerateLimit(Constants::FPS);
 
@@ -96,6 +98,20 @@ void Game::processEvents() {
 void Game::update(sf::Time deltaTime) {
     menuAnimTime_ += deltaTime.asSeconds();
 
+    if (state_ == Constants::GameState::LevelComplete) {
+        levelCompleteTimer_ -= deltaTime.asSeconds();
+        if (levelCompleteTimer_ <= 0.f) {
+            // Yeni level basla
+            ++level_;
+            maze_.reset();
+            player_.reset();
+            for (auto& g : ghosts_) g.reset();
+            frightenedTimer_ = 0.f;
+            state_ = Constants::GameState::Playing;
+        }
+        return;
+    }
+
     if (state_ == Constants::GameState::Playing) {
         // ===== Frightened sayaci: 0'a inerse hayaletler normale doner =====
         if (frightenedTimer_ > 0.f) {
@@ -130,6 +146,13 @@ void Game::update(sf::Time deltaTime) {
                 }
             }
         }
+
+            // ===== Level Complete kontrolu =====
+        if (maze_.remainingPellets() == 0) {
+            state_ = Constants::GameState::LevelComplete;
+            levelCompleteTimer_ = 3.f;       // 3 saniye sonra yeni level
+        }
+
 
         // ===== Hayalet carpisma kontrolu =====
         for (auto& g : ghosts_) {
@@ -177,15 +200,15 @@ void Game::update(sf::Time deltaTime) {
 void Game::render() {
     window_.clear(Constants::Colors::BACKGROUND);
     switch (state_) {
-        case Constants::GameState::Menu:     renderMenu();     break;
-        case Constants::GameState::Playing:  renderPlaying();  break;
-        case Constants::GameState::Paused:   renderPaused();   break;
-        case Constants::GameState::GameOver: renderGameOver(); break;
+        case Constants::GameState::Menu:          renderMenu();          break;
+        case Constants::GameState::Playing:       renderPlaying();       break;
+        case Constants::GameState::Paused:        renderPaused();        break;
+        case Constants::GameState::LevelComplete: renderLevelComplete(); break;
+        case Constants::GameState::GameOver:      renderGameOver();      break;
         default: break;
     }
     window_.display();
 }
-
 
 void Game::renderMenu() {
     const float cx = Constants::WINDOW_WIDTH  / 2.f;
@@ -271,6 +294,14 @@ void Game::renderPlaying() {
     scoreValue.setPosition(20.f, panelY + 22.f);
     window_.draw(scoreValue);
 
+     // LEVEL (ortada)
+    sf::Text levelLabel("LEVEL " + std::to_string(level_), font_, 18);
+    levelLabel.setFillColor(Constants::Colors::UI_HIGHLIGHT);
+    centerText(levelLabel,
+               Constants::WINDOW_WIDTH / 2.f,
+               panelY + 22.f);
+    window_.draw(levelLabel);
+
     // CANLAR (sag taraf) - kalan can sayisi kadar kucuk sari yuvarlak
     sf::Text livesLabel("CAN", font_, 18);
     livesLabel.setFillColor(Constants::Colors::UI_HIGHLIGHT);
@@ -343,6 +374,32 @@ void Game::renderGameOver() {
     window_.draw(esc);
 }
 
+void Game::renderLevelComplete() {
+    maze_.draw(window_);
+    player_.draw(window_);
+    for (const auto& g : ghosts_) g.draw(window_);
+
+    if (!fontLoaded_) return;
+
+    sf::RectangleShape overlay(sf::Vector2f(Constants::WINDOW_WIDTH,
+                                            Constants::WINDOW_HEIGHT));
+    overlay.setFillColor(sf::Color(0, 0, 0, 180));
+    window_.draw(overlay);
+
+    sf::Text title("LEVEL " + std::to_string(level_) + " TAMAM!", font_, 48);
+    title.setFillColor(Constants::Colors::UI_HIGHLIGHT);
+    title.setOutlineColor(Constants::Colors::WALL);
+    title.setOutlineThickness(3.f);
+    centerText(title, Constants::WINDOW_WIDTH / 2.f,
+                      Constants::WINDOW_HEIGHT / 2.f - 30.f);
+    window_.draw(title);
+
+    sf::Text info("Yeni seviye basliyor...", font_, 22);
+    info.setFillColor(Constants::Colors::UI_TEXT);
+    centerText(info, Constants::WINDOW_WIDTH / 2.f,
+                     Constants::WINDOW_HEIGHT / 2.f + 30.f);
+    window_.draw(info);
+}
 
 // SFML Text varsayilan olarak sol-ust kosesinden konumlanir.
 // Origin'i merkeze tasiyarak gercek anlamda ortalamis oluyoruz.

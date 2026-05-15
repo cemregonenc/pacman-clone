@@ -38,6 +38,7 @@ public:
 
     // Kalan pellet sayisi (level complete kontrolu icin, Adim 4.4'te kullanilacak)
     int   remainingPellets() const { return pelletCount_; }
+    void  reset();
 
     int cols() const { return Constants::MAZE_COLS; }
     int rows() const { return Constants::MAZE_ROWS; }
