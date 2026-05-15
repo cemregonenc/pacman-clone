@@ -86,7 +86,41 @@ bool Maze::isInBounds(int col, int row) const {
 }
 
 
-// Cizim Adim 2.2'de yapilacak
-void Maze::draw(sf::RenderWindow& /*window*/) const {
-    // bos -- bir sonraki committe doldurulacak
+// Labirenti ciz: duvarlar (mavi blok + acik mavi parlama cercevesi).
+// Noktalar ve guc meyveleri Adim 4'te eklenecek.
+void Maze::draw(sf::RenderWindow& window) const {
+    const float ts = static_cast<float>(Constants::TILE_SIZE);
+
+    for (int row = 0; row < Constants::MAZE_ROWS; ++row) {
+        for (int col = 0; col < Constants::MAZE_COLS; ++col) {
+            Tile t = grid_[row][col];
+            float x = col * ts;
+            float y = row * ts;
+
+            if (t == Tile::Wall) {
+                // Duvar govdesi: mavi dolgu
+                sf::RectangleShape body(sf::Vector2f(ts, ts));
+                body.setPosition(x, y);
+                body.setFillColor(Constants::Colors::WALL);
+                window.draw(body);
+
+                // Parlama cercevesi: acik mavi, ince kenarlik
+                // (klasik Pac-Man duvarlarinin neon hissi)
+                sf::RectangleShape glow(sf::Vector2f(ts - 4.f, ts - 4.f));
+                glow.setPosition(x + 2.f, y + 2.f);
+                glow.setFillColor(sf::Color::Transparent);
+                glow.setOutlineColor(Constants::Colors::WALL_GLOW);
+                glow.setOutlineThickness(1.f);
+                window.draw(glow);
+            }
+            else if (t == Tile::GhostGate) {
+                // Hayalet kapisi: ince pembe cubuk (ust ortada)
+                sf::RectangleShape gate(sf::Vector2f(ts, 4.f));
+                gate.setPosition(x, y + ts / 2.f - 2.f);
+                gate.setFillColor(Constants::Colors::GHOST_PINK);
+                window.draw(gate);
+            }
+            // Pellet / PowerPellet / Empty -> Adim 4'te
+        }
+    }
 }
