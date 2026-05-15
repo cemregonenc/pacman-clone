@@ -80,7 +80,9 @@ void Game::update(sf::Time deltaTime) {
     menuAnimTime_ += deltaTime.asSeconds();
     // Oyun durumlarinda nesne mantigini guncelle
     if (state_ == Constants::GameState::Playing) {
-        player_.update(deltaTime);
+        player_.handleInput(maze_);
+        player_.update(deltaTime, maze_);
+
     }
 }
 

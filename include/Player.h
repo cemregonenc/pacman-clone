@@ -4,27 +4,35 @@
 #include "Maze.h"
 
 // Oyuncu (Pac-Man) sinifi.
-// Adim 3.1'de sadece sabit bir konumda cizim yapiyor.
-// Sonraki adimlarda hareket, duvar carpismasi ve ozel fotograf destegi eklenecek.
+// Klavye ile yon degistirir, surekli son yonde ilerler.
+// Adim 3.3'te duvar carpismasi, 3.4'te ozel fotograf destegi eklenecek.
 class Player {
 public:
-    // Yon enum'u (hareket icin sonradan kullanilacak)
     enum class Direction { None, Up, Down, Left, Right };
 
     Player();
 
-    void update(sf::Time deltaTime);
+    void handleInput(const Maze& maze);
+    void update(sf::Time deltaTime, const Maze& maze);
     void draw(sf::RenderWindow& window) const;
 
-    // Konum sorgusu (hayalet AI'inin Pac-Man'i takip etmesi icin)
     sf::Vector2f position() const { return position_; }
 
 private:
-    // Klasik Pac-Man yuvarlagini ciz (sari daire + animasyonlu agiz)
     void drawClassic(sf::RenderWindow& window) const;
 
-    sf::Vector2f position_;     // Piksel cinsinden (tile merkezi)
-    Direction    direction_;    // Yuzun baktigi yon
-    float        animTime_;     // Agiz animasyonu icin gecen sure
-    float        radius_;       // Pac-Man yaricapi
+    // Yardimcilar
+    sf::Vector2i currentTile() const;
+    bool         atTileCenter() const;
+    sf::Vector2f directionVector(Direction d) const;
+    bool         canMoveInDirection(Direction d, const Maze& maze) const;
+
+
+    // Uyeler
+    sf::Vector2f position_;
+    Direction    direction_;
+    Direction    desiredDirection_;
+    float        animTime_;
+    float        radius_;
+    float        speed_;
 };

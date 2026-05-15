@@ -1,21 +1,97 @@
 #include "Player.h"
 #include <cmath>
 
-// Pac-Man'i klasik baslangic konumuna yerlestir:
-// Labirentin altinda, ortada bir yerde (tile merkezine hizali)
+
 Player::Player()
-    : position_(14.f * Constants::TILE_SIZE,        // 14. sutun merkezi
+    : position_(14.f * Constants::TILE_SIZE,
                 23.f * Constants::TILE_SIZE + Constants::TILE_SIZE / 2.f)
-    , direction_(Direction::Right)                  // Baslangicta saga bakar
+    , direction_(Direction::Right)
+    , desiredDirection_(Direction::Right)
     , animTime_(0.f)
-    , radius_(Constants::TILE_SIZE * 0.45f)         // Tile'in biraz icinde kalsin
+    , radius_(Constants::TILE_SIZE * 0.45f)
+    , speed_(Constants::TILE_SIZE * 5.f)
 {
 }
 
 
-// Adim 3.2'de hareket eklenecek. Su an sadece agiz animasyon zamani.
-void Player::update(sf::Time deltaTime) {
+// Yon tuslarini oku
+void Player::handleInput(const Maze& /*maze*/) {
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+        desiredDirection_ = Direction::Up;
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+        desiredDirection_ = Direction::Down;
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+        desiredDirection_ = Direction::Left;
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+        desiredDirection_ = Direction::Right;
+}
+
+
+void Player::update(sf::Time deltaTime, const Maze& maze) {
     animTime_ += deltaTime.asSeconds();
+
+    // Tile merkezinde yon kararlarini ver
+    if (atTileCenter()) {
+        // 1) Istenen yone donmek mumkun mu? Mumkunse don
+        if (desiredDirection_ != direction_ &&
+            canMoveInDirection(desiredDirection_, maze)) {
+            direction_ = desiredDirection_;
+        }
+        // 2) Mevcut yonde de duvar varsa dur
+        if (!canMoveInDirection(direction_, maze)) {
+            // Pozisyonu tam tile merkezine kilitle (kayma olmasin)
+            sf::Vector2i tile = currentTile();
+            position_.x = tile.x * Constants::TILE_SIZE + Constants::TILE_SIZE / 2.f;
+            position_.y = tile.y * Constants::TILE_SIZE + Constants::TILE_SIZE / 2.f;
+            return;
+        }
+    }
+
+    // Hareket et
+    sf::Vector2f delta = directionVector(direction_) * speed_ * deltaTime.asSeconds();
+    position_ += delta;
+
+    // Yan tunel
+    float maxX = Constants::MAZE_COLS * Constants::TILE_SIZE;
+    if (position_.x < -radius_) position_.x = maxX + radius_;
+    if (position_.x > maxX + radius_) position_.x = -radius_;
+}
+
+
+sf::Vector2i Player::currentTile() const {
+    int col = static_cast<int>(position_.x / Constants::TILE_SIZE);
+    int row = static_cast<int>(position_.y / Constants::TILE_SIZE);
+    return { col, row };
+}
+
+
+bool Player::atTileCenter() const {
+    float cx = currentTile().x * Constants::TILE_SIZE + Constants::TILE_SIZE / 2.f;
+    float cy = currentTile().y * Constants::TILE_SIZE + Constants::TILE_SIZE / 2.f;
+    const float tolerance = 2.f;
+    return std::abs(position_.x - cx) < tolerance &&
+           std::abs(position_.y - cy) < tolerance;
+}
+
+
+sf::Vector2f Player::directionVector(Direction d) const {
+    switch (d) {
+        case Direction::Up:    return { 0.f, -1.f };
+        case Direction::Down:  return { 0.f,  1.f };
+        case Direction::Left:  return {-1.f,  0.f };
+        case Direction::Right: return { 1.f,  0.f };
+        default:               return { 0.f,  0.f };
+    }
+}
+
+
+// Bulundugumuz tile'dan o yondeki KOMSU tile duvar mi?
+bool Player::canMoveInDirection(Direction d, const Maze& maze) const {
+    sf::Vector2i tile = currentTile();
+    sf::Vector2f v = directionVector(d);
+    int nextCol = tile.x + static_cast<int>(v.x);
+    int nextRow = tile.y + static_cast<int>(v.y);
+    return !maze.isWall(nextCol, nextRow);
 }
 
 
@@ -24,14 +100,10 @@ void Player::draw(sf::RenderWindow& window) const {
 }
 
 
-// Klasik Pac-Man: sari daire + animasyonlu ucgen agiz.
-// (Menudeki Pac-Man'in aynisi ama daha kucuk ve yone gore donuk.)
 void Player::drawClassic(sf::RenderWindow& window) const {
-    // Agiz acikligini sin dalgasi ile salindir (0..50 derece)
     float openAmount = (std::sin(animTime_ * 10.f) + 1.f) * 0.5f;
     float mouthAngle = openAmount * 50.f;
 
-    // Yone gore baslangic acisi (dairenin hangi tarafa agiz acacagi)
     float baseAngle = 0.f;
     switch (direction_) {
         case Direction::Right: baseAngle = 0.f;   break;
@@ -41,14 +113,12 @@ void Player::drawClassic(sf::RenderWindow& window) const {
         case Direction::None:  baseAngle = 0.f;   break;
     }
 
-    // Govde: sari daire
     sf::CircleShape body(radius_, 32);
     body.setFillColor(Constants::Colors::PACMAN);
     body.setOrigin(radius_, radius_);
     body.setPosition(position_);
     window.draw(body);
 
-    // Agiz: arka plan rengiyle ucgen cizip parca keseriz
     sf::ConvexShape mouth;
     mouth.setPointCount(3);
     mouth.setPoint(0, sf::Vector2f(0.f, 0.f));
