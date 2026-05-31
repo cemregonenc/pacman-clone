@@ -48,6 +48,8 @@ private:
     std::vector<Ghost>   ghosts_;
     float                 frightenedTimer_;
     int                   level_;
-    float                 levelCompleteTimer_;
+    float                 levelCompleteTimer_; 
+    int                   highScore_;
+    bool                  newRecord_;
 
 };

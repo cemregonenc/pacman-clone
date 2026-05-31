@@ -20,6 +20,8 @@ Game::Game()
     , frightenedTimer_(0.f)
     , level_(1)
     , levelCompleteTimer_(0.f)
+    , highScore_(0)
+    , newRecord_(false)
 {
     window_.setFramerateLimit(Constants::FPS);
 
@@ -85,6 +87,21 @@ void Game::processEvents() {
                     else if (state_ == Constants::GameState::Paused)
                         state_ = Constants::GameState::Playing;
                     break;
+                case sf::Keyboard::R:
+                // GameOver ekraninda R -> yeniden basla
+                    if (state_ == Constants::GameState::GameOver) {
+                        score_ = 0;
+                        lives_ = 3;
+                        level_ = 1;
+                        newRecord_ = false;
+                        frightenedTimer_ = 0.f;
+                        maze_.reset();
+                        player_.reset();
+                        for (auto& g : ghosts_) g.reset();
+                        state_ = Constants::GameState::Playing;
+                    }
+                    break;    
+                   
                 default: break;
             }
         }
@@ -175,6 +192,10 @@ void Game::update(sf::Time deltaTime) {
                     frightenedTimer_ = 0.f;
 
                     if (lives_ <= 0) {
+                        if (score_ > highScore_) {
+                            highScore_ = score_;
+                            newRecord_ = true;
+                        }
                         state_ = Constants::GameState::GameOver;
                     }
                     break;
@@ -339,38 +360,50 @@ void Game::renderPaused() {
 
 
 void Game::renderGameOver() {
-    // Arka planda labirent kalsin (daha sahne hissi)
     maze_.draw(window_);
 
     if (!fontLoaded_) return;
 
-    // Yari saydam karartma
     sf::RectangleShape overlay(sf::Vector2f(Constants::WINDOW_WIDTH,
                                             Constants::WINDOW_HEIGHT));
     overlay.setFillColor(sf::Color(0, 0, 0, 200));
     window_.draw(overlay);
 
-    // GAME OVER baslik
     sf::Text title("GAME OVER", font_, 56);
     title.setFillColor(Constants::Colors::GHOST_RED);
     title.setOutlineColor(sf::Color::White);
     title.setOutlineThickness(2.f);
     centerText(title, Constants::WINDOW_WIDTH / 2.f,
-                      Constants::WINDOW_HEIGHT / 2.f - 60.f);
+                      Constants::WINDOW_HEIGHT / 2.f - 80.f);
     window_.draw(title);
 
-    // Skor
     sf::Text scoreText("SKOR: " + std::to_string(score_), font_, 28);
     scoreText.setFillColor(Constants::Colors::UI_HIGHLIGHT);
     centerText(scoreText, Constants::WINDOW_WIDTH / 2.f,
-                          Constants::WINDOW_HEIGHT / 2.f + 10.f);
+                          Constants::WINDOW_HEIGHT / 2.f - 10.f);
     window_.draw(scoreText);
 
-    // Cikis ipucu
-    sf::Text esc("ESC: Cikis", font_, 16);
+    // Yeni rekor mu, yoksa eski yuksek skor mu goster?
+    if (newRecord_) {
+        sf::Text rec("YENI REKOR!", font_, 32);
+        rec.setFillColor(Constants::Colors::POWER_PELLET);
+        rec.setOutlineColor(Constants::Colors::GHOST_RED);
+        rec.setOutlineThickness(2.f);
+        centerText(rec, Constants::WINDOW_WIDTH / 2.f,
+                        Constants::WINDOW_HEIGHT / 2.f + 30.f);
+        window_.draw(rec);
+    } else {
+        sf::Text hs("Yuksek Skor: " + std::to_string(highScore_), font_, 20);
+        hs.setFillColor(Constants::Colors::UI_TEXT);
+        centerText(hs, Constants::WINDOW_WIDTH / 2.f,
+                       Constants::WINDOW_HEIGHT / 2.f + 30.f);
+        window_.draw(hs);
+    }
+
+    sf::Text esc("R: Yeniden Oyna  |  ESC: Cikis", font_, 16);
     esc.setFillColor(sf::Color(180, 180, 180));
     centerText(esc, Constants::WINDOW_WIDTH / 2.f,
-                    Constants::WINDOW_HEIGHT / 2.f + 70.f);
+                    Constants::WINDOW_HEIGHT / 2.f + 90.f);
     window_.draw(esc);
 }
 
